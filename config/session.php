@@ -1,10 +1,17 @@
 <?php
-// config/session.php - Standardized Version for Hosting
+// config/session.php - Robust Version
 if (session_status() === PHP_SESSION_NONE) {
-    // We use a simple session name
-    session_name('DRV_SESS_ID');
+    session_name('DELITRACK_SESSION_V4');
 
-    // Default session start is often the most stable on shared hosting
+    // Force cookie to be available everywhere in the domain
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+
     session_start();
 }
 
@@ -15,12 +22,14 @@ function isLoggedIn()
 
 function isAdmin()
 {
-    return isset($_SESSION['role']) && $_SESSION['role'] === 'admin';
+    // ឆែកមើល Role ឱ្យហ្មត់ចត់ (ដក space និងប្តូរជាអក្សរតូច)
+    return isset($_SESSION['role']) && trim(strtolower($_SESSION['role'])) === 'admin';
 }
 
 function isDriver()
 {
-    return isset($_SESSION['role']) && $_SESSION['role'] === 'driver';
+    // ឆែកមើល Role ឱ្យហ្មត់ចត់ (ដក space និងប្តូរជាអក្សរតូច)
+    return isset($_SESSION['role']) && trim(strtolower($_SESSION['role'])) === 'driver';
 }
 
 function requireLogin()
@@ -30,7 +39,6 @@ function requireLogin()
         $isSub = (strpos($currentPath, '/admin/') !== false || strpos($currentPath, '/driver/') !== false || strpos($currentPath, '/api/') !== false);
         $path = $isSub ? '../index.php' : 'index.php';
 
-        header("Cache-Control: no-cache, must-revalidate");
         header("Location: $path");
         exit();
     }
@@ -40,9 +48,9 @@ function requireAdmin()
 {
     requireLogin();
     if (!isAdmin()) {
-        // Redirect to a neutral zone if not admin, instead of looping
-        session_write_close();
-        header("Location: ../index.php?error=unauthorized_admin");
+        // បើមិនមែន admin ទេ ឱ្យទៅទំព័រ login ដើម្បីឆែក role ឡើងវិញ ជៀសវាងវិលជុំ
+        $path = (strpos($_SERVER['PHP_SELF'], '/admin/') !== false) ? '../index.php' : 'index.php';
+        header("Location: $path?error=access_denied_admin");
         exit();
     }
 }
@@ -51,9 +59,9 @@ function requireDriver()
 {
     requireLogin();
     if (!isDriver()) {
-        // Redirect to a neutral zone if not driver, instead of looping
-        session_write_close();
-        header("Location: ../index.php?error=unauthorized_driver");
+        // បើមិនមែន driver ទេ ឱ្យទៅទំព័រ login ដើម្បីឆែក role ឡើងវិញ ជៀសវាងវិលជុំ
+        $path = (strpos($_SERVER['PHP_SELF'], '/driver/') !== false) ? '../index.php' : 'index.php';
+        header("Location: $path?error=access_denied_driver");
         exit();
     }
 }
