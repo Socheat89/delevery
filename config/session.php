@@ -1,9 +1,25 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    // Use a unique session name for the live environment
-    session_name('DELITRACK_SESSION_LIVE');
+    // ១. កំណត់ឈ្មោះ Session ឱ្យប្លែកគេបំផុត
+    session_name('DELITRACK_SESSION_V3');
 
-    // Use default session handling which is most compatible with cPanel/Shared hosting
+    // ២. ពិនិត្យរកមើល HTTPS ដើម្បីកំណត់សុវត្ថិភាព Cookie
+    $isSecure = false;
+    if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on')
+        $isSecure = true;
+    if (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https')
+        $isSecure = true;
+
+    // ៣. កំណត់ឱ្យ Cookie អាចប្រើបានគ្រប់ទីកន្លែងក្នុង Domain (Path = /)
+    // នេះជួយឱ្យ admin/ និង driver/ អាចឃើញ Session ដូចគ្នា
+    session_set_cookie_params([
+        'lifetime' => 86400, // ១ ថ្ងៃ
+        'path' => '/',
+        'secure' => $isSecure,
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
+
     session_start();
 }
 
@@ -25,12 +41,13 @@ function isDriver()
 function requireLogin()
 {
     if (!isLoggedIn()) {
-        // Detect if we are inside a subdirectory to redirect correctly
         $currentPath = $_SERVER['PHP_SELF'];
+        // ឆែកមើលថាតើយើងនៅក្នុង Subfolder ឬអត់
         $isSub = (strpos($currentPath, '/admin/') !== false || strpos($currentPath, '/driver/') !== false || strpos($currentPath, '/api/') !== false);
         $path = $isSub ? '../index.php' : 'index.php';
 
         header("Location: $path");
+        session_write_close();
         exit();
     }
 }
@@ -40,6 +57,7 @@ function requireAdmin()
     requireLogin();
     if (!isAdmin()) {
         header("Location: ../driver/index.php");
+        session_write_close();
         exit();
     }
 }
@@ -49,6 +67,7 @@ function requireDriver()
     requireLogin();
     if (!isDriver()) {
         header("Location: ../admin/index.php");
+        session_write_close();
         exit();
     }
 }
