@@ -1,19 +1,9 @@
 <?php
 if (session_status() === PHP_SESSION_NONE) {
-    // ១. បង្កើត Folder សម្រាប់ទុក Session ខ្លួនឯង
-    $sessionPath = __DIR__ . '/../sessions';
-    if (!is_dir($sessionPath)) {
-        @mkdir($sessionPath, 0777, true);
-    }
-    if (is_writable($sessionPath)) {
-        session_save_path($sessionPath);
-    }
-
-    // ២. កំណត់ឈ្មោះ Session ឱ្យដាច់ដោយឡែក
+    // ១. កំណត់ឈ្មោះ Session ឱ្យដាច់ដោយឡែក
     session_name('DELITRACK_SESSION');
 
-    // ៣. កំណត់ឱ្យ Cookie ដើរតាម Subfolder របស់ Project (ជំនួសឱ្យ / ធំ)
-    // រកផ្លូវ URL របស់ Folder ដើម (Project Root) ឱ្យបានត្រឹមត្រូវ
+    // ២. រកផ្លូវ URL របស់ Folder ដើម (Project Root) ឱ្យបានត្រឹមត្រូវ
     $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
     $parts = explode('/', trim($scriptDir, '/'));
 
@@ -25,11 +15,17 @@ if (session_status() === PHP_SESSION_NONE) {
 
     $projectPath = '/' . implode('/', $parts);
     $projectPath = rtrim($projectPath, '/') . '/';
-    if ($projectPath === '')
+    if ($projectPath === '//')
         $projectPath = '/';
 
-    ini_set('session.cookie_path', $projectPath);
-    ini_set('session.gc_maxlifetime', 3600 * 24); // ១ ថ្ងៃ
+    // ៣. កំណត់ការកំណត់ Cookie ឱ្យមានសុវត្ថិភាព និងបត់បែន
+    session_set_cookie_params([
+        'lifetime' => 3600 * 24,
+        'path' => $projectPath,
+        'secure' => isset($_SERVER['HTTPS']),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
 
     session_start();
 }
