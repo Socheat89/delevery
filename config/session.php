@@ -13,10 +13,21 @@ if (session_status() === PHP_SESSION_NONE) {
     session_name('DELITRACK_SESSION');
 
     // ៣. កំណត់ឱ្យ Cookie ដើរតាម Subfolder របស់ Project (ជំនួសឱ្យ / ធំ)
-    $projectPath = str_replace('\\', '/', dirname(dirname($_SERVER['SCRIPT_NAME'])));
-    $projectPath = rtrim($projectPath, '/');
-    if (empty($projectPath)) $projectPath = '/';
-    
+    // រកផ្លូវ URL របស់ Folder ដើម (Project Root) ឱ្យបានត្រឹមត្រូវ
+    $scriptDir = str_replace('\\', '/', dirname($_SERVER['SCRIPT_NAME']));
+    $parts = explode('/', trim($scriptDir, '/'));
+
+    // ប្រសិនបើកូដស្ថិតនៅក្នុង admin/ ឬ driver/ ឬ api/ យើងត្រូវថយក្រោយ ១ ថ្នាក់
+    $currentFolder = end($parts);
+    if (in_array($currentFolder, ['admin', 'driver', 'api', 'config'])) {
+        array_pop($parts);
+    }
+
+    $projectPath = '/' . implode('/', $parts);
+    $projectPath = rtrim($projectPath, '/') . '/';
+    if ($projectPath === '')
+        $projectPath = '/';
+
     ini_set('session.cookie_path', $projectPath);
     ini_set('session.gc_maxlifetime', 3600 * 24); // ១ ថ្ងៃ
 
