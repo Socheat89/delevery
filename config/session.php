@@ -1,71 +1,90 @@
 <?php
-// config/session.php - Robust Version
+// config/session.php - Final Stability Fix
 if (session_status() === PHP_SESSION_NONE) {
-    session_name('DELITRACK_SESSION_V4');
-
-    // Force cookie to be available everywhere in the domain
-    session_set_cookie_params([
-        'lifetime' => 0,
-        'path' => '/',
-        'secure' => (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on'),
-        'httponly' => true,
-        'samesite' => 'Lax'
-    ]);
-
+    // We use default PHP settings for maximum compatibility with all hosting providers
     session_start();
 }
 
+/**
+ * Check if the user is authenticated
+ */
 function isLoggedIn()
 {
     return isset($_SESSION['user_id']) && !empty($_SESSION['user_id']);
 }
 
+/**
+ * Check if the authenticated user is an admin
+ */
 function isAdmin()
 {
-    // ឆែកមើល Role ឱ្យហ្មត់ចត់ (ដក space និងប្តូរជាអក្សរតូច)
-    return isset($_SESSION['role']) && trim(strtolower($_SESSION['role'])) === 'admin';
+    if (!isset($_SESSION['role']))
+        return false;
+    return strtolower(trim($_SESSION['role'])) === 'admin';
 }
 
+/**
+ * Check if the authenticated user is a driver
+ */
 function isDriver()
 {
-    // ឆែកមើល Role ឱ្យហ្មត់ចត់ (ដក space និងប្តូរជាអក្សរតូច)
-    return isset($_SESSION['role']) && trim(strtolower($_SESSION['role'])) === 'driver';
+    if (!isset($_SESSION['role']))
+        return false;
+    return strtolower(trim($_SESSION['role'])) === 'driver';
 }
 
+/**
+ * Ensure the user is logged in
+ */
 function requireLogin()
 {
     if (!isLoggedIn()) {
-        $currentPath = $_SERVER['PHP_SELF'];
-        $isSub = (strpos($currentPath, '/admin/') !== false || strpos($currentPath, '/driver/') !== false || strpos($currentPath, '/api/') !== false);
-        $path = $isSub ? '../index.php' : 'index.php';
+        $current = $_SERVER['PHP_SELF'];
+        $isSub = (strpos($current, '/admin/') !== false || strpos($current, '/driver/') !== false || strpos($current, '/api/') !== false);
+        $target = $isSub ? '../index.php' : 'index.php';
 
-        header("Location: $path");
+        // Clear session to be sure
+        session_unset();
+        session_destroy();
+
+        header("Location: $target");
         exit();
     }
 }
 
+/**
+ * Ensure the user is an admin
+ */
 function requireAdmin()
 {
     requireLogin();
     if (!isAdmin()) {
-        // បើមិនមែន admin ទេ ឱ្យទៅទំព័រ login ដើម្បីឆែក role ឡើងវិញ ជៀសវាងវិលជុំ
-        $path = (strpos($_SERVER['PHP_SELF'], '/admin/') !== false) ? '../index.php' : 'index.php';
-        header("Location: $path?error=access_denied_admin");
+        // If not admin, go back to root to be routed correctly
+        $target = (strpos($_SERVER['PHP_SELF'], '/admin/') !== false) ? '../index.php' : 'index.php';
+        session_write_close();
+        header("Location: $target");
         exit();
     }
 }
 
+/**
+ * Ensure the user is a driver
+ */
 function requireDriver()
 {
     requireLogin();
     if (!isDriver()) {
-        // បើមិនមែន driver ទេ ឱ្យទៅទំព័រ login ដើម្បីឆែក role ឡើងវិញ ជៀសវាងវិលជុំ
-        $path = (strpos($_SERVER['PHP_SELF'], '/driver/') !== false) ? '../index.php' : 'index.php';
-        header("Location: $path?error=access_denied_driver");
+        // If not driver, go back to root to be routed correctly
+        $target = (strpos($_SERVER['PHP_SELF'], '/driver/') !== false) ? '../index.php' : 'index.php';
+        session_write_close();
+        header("Location: $target");
         exit();
     }
 }
 
+/**
+ * Get current user data
+ */
 function getCurrentUser()
 {
     if (!isLoggedIn())

@@ -2,13 +2,16 @@
 require_once __DIR__ . '/config/session.php';
 
 if (isLoggedIn()) {
-    if (isAdmin()) {
+    $role = strtolower(trim($_SESSION['role'] ?? ''));
+    if ($role === 'admin') {
+        session_write_close();
         header("Location: admin/index.php");
-    } else {
+        exit();
+    } else if ($role === 'driver') {
+        session_write_close();
         header("Location: driver/index.php");
+        exit();
     }
-    session_write_close();
-    exit();
 }
 
 $error = '';
