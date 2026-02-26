@@ -19,10 +19,13 @@ if (session_status() === PHP_SESSION_NONE) {
         $projectPath = '/';
 
     // ៣. កំណត់ការកំណត់ Cookie ឱ្យមានសុវត្ថិភាព និងបត់បែន
+    $isSecure = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') ||
+        (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+
     session_set_cookie_params([
         'lifetime' => 3600 * 24,
         'path' => $projectPath,
-        'secure' => isset($_SERVER['HTTPS']),
+        'secure' => $isSecure,
         'httponly' => true,
         'samesite' => 'Lax'
     ]);
