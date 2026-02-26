@@ -46,8 +46,8 @@ function requireLogin()
         $isSub = (strpos($currentPath, '/admin/') !== false || strpos($currentPath, '/driver/') !== false || strpos($currentPath, '/api/') !== false);
         $path = $isSub ? '../index.php' : 'index.php';
 
+        header("Cache-Control: no-cache, must-revalidate");
         header("Location: $path");
-        session_write_close();
         exit();
     }
 }
@@ -56,8 +56,9 @@ function requireAdmin()
 {
     requireLogin();
     if (!isAdmin()) {
-        header("Location: ../driver/index.php");
-        session_write_close();
+        // ប្រសិនបើមិនមែន Admin ទេ ឱ្យត្រឡប់ទៅ index.php ដើម្បីឱ្យវាឆែកបន្ត (ជៀសវាង loop រវាង subfolder)
+        $path = (strpos($_SERVER['PHP_SELF'], '/admin/') !== false) ? '../index.php' : 'index.php';
+        header("Location: $path");
         exit();
     }
 }
@@ -66,8 +67,9 @@ function requireDriver()
 {
     requireLogin();
     if (!isDriver()) {
-        header("Location: ../admin/index.php");
-        session_write_close();
+        // ប្រសិនបើមិនមែន Driver ទេ ឱ្យត្រឡប់ទៅ index.php (ជៀសវាង loop រវាង subfolder)
+        $path = (strpos($_SERVER['PHP_SELF'], '/driver/') !== false) ? '../index.php' : 'index.php';
+        header("Location: $path");
         exit();
     }
 }
