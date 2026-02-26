@@ -1,0 +1,13 @@
+Options -Indexes
+
+# Protect config files
+<FilesMatch "^(database|session)\.php$">
+    Order allow,deny
+    Deny from all
+</FilesMatch>
+
+# Protect setup from public after first run (uncomment after setup)
+# <Files "setup.php">
+#     Order allow,deny
+#     Deny from all
+# </Files>

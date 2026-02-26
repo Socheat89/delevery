@@ -1,0 +1,5 @@
+sessions/
+*.zip
+back_up/
+error_log
+.DS_Store
